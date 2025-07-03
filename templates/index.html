@@ -287,11 +287,7 @@
                           
                         - resultElement.innerText: Updates the text inside the result <div> to display the result.
                     */
-            resultElement.innerText =
-              "Calculation Result: " +
-              (Number.isInteger(data.result)
-                ? data.result
-                : data.result.toFixed(2));
+            resultElement.innerText = "Calculation Result: " + data.result;
           } else {
             /*
                         Error Response Handling
