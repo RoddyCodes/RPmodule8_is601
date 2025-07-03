@@ -198,7 +198,7 @@
             - "Divide": The text displayed on the button.
         -->
 
-      <div class="result" id="result"></div>
+      <div class="result" id="result">&nbsp;</div>
       <!--
             <div> Element: Result Display
             
@@ -287,7 +287,13 @@
                           
                         - resultElement.innerText: Updates the text inside the result <div> to display the result.
                     */
-            resultElement.innerText = "Calculation Result: " + data.result;
+            if (Number.isInteger(data.result)) {
+              resultElement.innerText =
+                "Calculation Result: " + parseInt(data.result);
+            } else {
+              // If it's a true float (e.g., 3.5), display with decimal
+              resultElement.innerText = "Calculation Result: " + data.result;
+            }
           } else {
             /*
                         Error Response Handling
