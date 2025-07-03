@@ -1,76 +1,158 @@
 # tests/e2e/test_e2e.py
 
 import pytest  # Import the pytest framework for writing and running tests
-from playwright.sync_api import Page, expect 
+from playwright.sync_api import Page, expect  # Import Page and expect for Playwright testing
 
 # The following decorators and functions define E2E tests for the FastAPI calculator application.
 
 @pytest.mark.e2e
-def test_hello_world(page, fastapi_server):
+def test_homepage_loads_and_elements_exist(page: Page, fastapi_server):
     """
-    Test that the homepage displays "Hello World".
+    Test that the homepage loads successfully and all key calculator elements are visible.
+    Combines the functionality of your test_hello_world and checks for calculator UI.
+    """
+    page.goto("http://localhost:8000")
 
-    This test verifies that when a user navigates to the homepage of the application,
-    the main header (`<h1>`) correctly displays the text "Hello World". This ensures
-    that the server is running and serving the correct template.
-    """
-    # Navigate the browser to the homepage URL of the FastAPI application.
-    page.goto('http://localhost:8000')
-    
-    # Use an assertion to check that the text within the first <h1> tag is exactly "Hello World".
-    # If the text does not match, the test will fail.
-    assert page.inner_text('h1') == 'Hello World'
+    # Verify main heading and calculator subheading
+    expect(page.locator("h1")).to_have_text("Hello World")
+    expect(page.locator("h2")).to_have_text("Calculator")
+
+    # Verify input fields are visible
+    expect(page.locator("#a")).to_be_visible()
+    expect(page.locator("#b")).to_be_visible()
+
+    # Verify all operation buttons are visible
+    expect(page.locator("button:text('Add')")).to_be_visible()
+    expect(page.locator("button:text('Subtract')")).to_be_visible()
+    expect(page.locator("button:text('Multiply')")).to_be_visible()
+    expect(page.locator("button:text('Divide')")).to_be_visible()
+
+    # Verify the result display area is visible and initially empty
+    # This assertion will now wait for the element to become visible and have empty text
+    expect(page.locator("#result")).to_be_visible()
+    expect(page.locator("#result")).to_have_text("")
+
 
 @pytest.mark.e2e
-def test_calculator_add(page, fastapi_server):
+def test_calculator_add(page: Page, fastapi_server):
     """
     Test the addition functionality of the calculator.
-
-    This test simulates a user performing an addition operation using the calculator
-    on the frontend. It fills in two numbers, clicks the "Add" button, and verifies
-    that the result displayed is correct.
+    Simulates user input and verifies the correct result display.
     """
-    # Navigate the browser to the homepage URL of the FastAPI application.
     page.goto('http://localhost:8000')
-    
-    # Fill in the first number input field (with id 'a') with the value '10'.
+
     page.fill('#a', '10')
-    
-    # Fill in the second number input field (with id 'b') with the value '5'.
     page.fill('#b', '5')
-    
-    # Click the button that has the exact text "Add". This triggers the addition operation.
     page.click('button:text("Add")')
-    
-    # Use an assertion to check that the text within the result div (with id 'result') is exactly "Result: 15".
-    # This verifies that the addition operation was performed correctly and the result is displayed as expected.
-    assert page.inner_text('#result') == 'Calculation Result: 15'
+
+    # Use expect().to_have_text() to wait for the element to have the correct text
+    expect(page.locator('#result')).to_have_text('Calculation Result: 15')
+
 
 @pytest.mark.e2e
-def test_calculator_divide_by_zero(page, fastapi_server):
+def test_calculator_subtract(page: Page, fastapi_server):
     """
-    Test the divide by zero functionality of the calculator.
-
-    This test simulates a user attempting to divide a number by zero using the calculator.
-    It fills in the numbers, clicks the "Divide" button, and verifies that the appropriate
-    error message is displayed. This ensures that the application correctly handles invalid
-    operations and provides meaningful feedback to the user.
+    Test the subtraction functionality of the calculator.
     """
-    # Navigate the browser to the homepage URL of the FastAPI application.
     page.goto('http://localhost:8000')
-    
-    # Fill in the first number input field (with id 'a') with the value '10'.
-    page.fill('#a', '10')
-    
-    # Fill in the second number input field (with id 'b') with the value '0', attempting to divide by zero.
-    page.fill('#b', '0')
-    
-    # Click the button that has the exact text "Divide". This triggers the division operation.
+
+    page.fill('#a', '20')
+    page.fill('#b', '7')
+    page.click('button:text("Subtract")')
+
+    expect(page.locator('#result')).to_have_text('Calculation Result: 13')
+
+
+@pytest.mark.e2e
+def test_calculator_multiply(page: Page, fastapi_server):
+    """
+    Test the multiplication functionality of the calculator.
+    """
+    page.goto('http://localhost:8000')
+
+    page.fill('#a', '6')
+    page.fill('#b', '4')
+    page.click('button:text("Multiply")')
+
+    expect(page.locator('#result')).to_have_text('Calculation Result: 24')
+
+
+@pytest.mark.e2e
+def test_calculator_divide(page: Page, fastapi_server):
+    """
+    Test the division functionality of the calculator with an integer result.
+    """
+    page.goto('http://localhost:8000')
+
+    page.fill('#a', '100')
+    page.fill('#b', '25')
     page.click('button:text("Divide")')
-    
-    # Use an assertion to check that the text within the result div (with id 'result') is exactly
-    # "Error: Cannot divide by zero!". This verifies that the application handles division by zero
-    # gracefully and displays the correct error message to the user.
-    assert page.inner_text('#result') == 'Error: Cannot divide by zero!'
+
+    expect(page.locator('#result')).to_have_text('Calculation Result: 4')
 
 
+@pytest.mark.e2e
+def test_calculator_divide_by_zero_error(page: Page, fastapi_server):
+    """
+    Test division by zero error handling on the frontend.
+    """
+    page.goto('http://localhost:8000')
+
+    page.fill('#a', '10')
+    page.fill('#b', '0')
+    page.click('button:text("Divide")')
+
+    # Use expect().to_have_text() here as well
+    expect(page.locator('#result')).to_have_text('Error: Cannot divide by zero!')
+
+
+@pytest.mark.e2e
+def test_calculator_float_results_and_inputs(page: Page, fastapi_server):
+    """
+    Test calculations involving float inputs and producing float results.
+    """
+    page.goto('http://localhost:8000')
+
+    # Test addition with floats
+    page.fill('#a', '7.5')
+    page.fill('#b', '2.5')
+    page.click('button:text("Add")')
+    # Expect 10, not 10.0, because we added Number.isInteger check in JS
+    expect(page.locator('#result')).to_have_text('Calculation Result: 10')
+
+    # Test division with float result (e.g., 7 / 2 = 3.5)
+    page.fill('#a', '7')
+    page.fill('#b', '2')
+    page.click('button:text("Divide")')
+    expect(page.locator('#result')).to_have_text('Calculation Result: 3.5')
+
+    # Test multiplication with float result (e.g., 2.5 * 3 = 7.5)
+    page.fill('#a', '2.5')
+    page.fill('#b', '3')
+    page.click('button:text("Multiply")')
+    expect(page.locator('#result')).to_have_text('Calculation Result: 7.5')
+
+    # Test subtraction with float result (e.g., 10 - 2.75 = 7.25)
+    page.fill('#a', '10')
+    page.fill('#b', '2.75')
+    page.click('button:text("Subtract")')
+    expect(page.locator('#result')).to_have_text('Calculation Result: 7.25')
+
+
+@pytest.mark.e2e
+def test_calculator_invalid_input_type_on_frontend(page: Page, fastapi_server):
+    """
+    Test frontend handling of non-numeric input.
+    """
+    page.goto('http://localhost:8000')
+
+    # Using evaluate to bypass type="number" browser-side validation for testing purposes
+    page.evaluate("document.getElementById('a').value = 'abc'")
+    page.evaluate("document.getElementById('b').value = '5'")
+    page.click('button:text("Add")')
+
+    # This assumes your frontend JS displays the 'error' from the backend's JSON response
+    # (FastAPI 422 validation error message)
+    expect(page.locator('#result')).to_have_text(
+        'Error: a: Input should be a valid number'
+    )
